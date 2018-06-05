@@ -125,6 +125,14 @@ public class LocalCache extends Thread {
         }
     }
 
+    public Map<String, Object> getWithoutTimeout(String key) {
+        Cached cached = cache.get(key);
+        if (cached == null) {
+            return null;
+        }
+        return cached.getMap();
+    }
+
     private Map<String, Object> refresh(Refreshable refreshable) {
         try {
             return refreshable.call();

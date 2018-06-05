@@ -28,6 +28,7 @@ insert into oauth2_term (type, name, map_value) values ('grant_type', 'implicit'
 
 insert into oauth2_term (type, name, map_value) values ('resource_id', 'oauth2-resource', '{"visible":["ALL"]}');
 insert into oauth2_term (type, name, map_value) values ('resource_id', 'oauth2-admin-api', '{"visible":["ROLE_ADMIN", "ROLE_SUPER", "ROLE_ROOT"]}');
+insert into oauth2_term (type, name, map_value) values ('resource_id', 'rdbcache', '{"visible":["ROLE_USER", "ROLE_ADMIN", "ROLE_SUPER", "ROLE_ROOT"]}');
 
 insert into security_user_details (
     user_id,
@@ -118,7 +119,7 @@ insert into oauth2_client_details (
     'admin_client',
     '$2a$10$EX91cBtPWVR31fVGWCUhmu4AQdKENlAdKZtzSsacurwZYZmn0BzNO',
     'admin_client@example',
-    '{"resource_ids":["oauth2-resource","oauth2-admin-api"],"scope":["read","write","delete"],"authorized_grant_types":["client_credentials","password"],"auto_approve_scopes":["read","write","delete"],"authorities":["ROLE_INTERNAL"]}'
+    '{"resource_ids":["oauth2-resource","oauth2-admin-api","rdbcache"],"scope":["read","write","delete"],"authorized_grant_types":["client_credentials","password"],"auto_approve_scopes":["read","write","delete"],"authorities":["ROLE_INTERNAL"]}'
 );
 
 insert into oauth2_client_details (
