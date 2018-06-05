@@ -1,0 +1,570 @@
+#!/bin/bash
+
+# prepare variables
+#
+root_client=04aa9802e4d145f8b2f8f3b2207b9416
+
+client_id=ccf681950c2f4ce8b12fc37fd35481a6
+client_secret=secret
+client_name=trusted_client
+scope="read%20write%20delete"
+redirect_uri=http://localhost:8080/login/oauth2
+
+username=admin@example.com
+password=123
+
+authserver_url=http://localhost:8282
+
+echo "******************************************************************************************"
+echo "verify scopes and roles"
+
+echo ""
+echo "1) verify end points are protected"
+echo ""
+
+cmd="curl -is -X GET '$authserver_url/api/v1/test/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -X GET '$authserver_url/oauth/v1/check_token?token=token_12345678910'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -X GET '$authserver_url/oauth/v1/token'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -u '$client_id:$client_secret' -X GET '$authserver_url/oauth/v1/check_token?token=token_not_existed'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "2) test grant_type=client_credentials to get access_token with read scope"
+echo ""
+cmd="curl -sS -X POST -u '$client_id:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials&scope=read'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+echo ""
+echo "3) test the access_token as Bearer header for read"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+subject=$(echo "$response" | jq '.subject' | sed -e 's/^"//' -e 's/"$//')
+echo "subject=$subject"
+
+if [ "$subject" != "test" ]; then
+  echo "subject not correct"
+  exit 1
+fi
+
+echo ""
+echo "4) test the access_token as Bearer header for admin delete"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test-admin-delete/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "403" ]; then
+    echo "response code should be 403"
+    exit 1
+fi
+
+echo ""
+echo "5) test the access_token as Bearer header for me"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+name=$(echo "$response" | jq '.name' | sed -e 's/^"//' -e 's/"$//')
+echo "name=$name"
+
+if [ "$name" != "$client_id" ]; then
+  echo "name not correct"
+  exit 1
+fi
+
+echo ""
+echo "6) test the access_token as Bearer header for write"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test-write/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "403" ]; then
+    echo "response code should be 403"
+    exit 1
+fi
+
+echo ""
+echo "7) test grant_type=client_credentials to get access_token with write scope"
+echo ""
+cmd="curl -sS -X POST -u '$client_id:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials&scope=write'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+echo ""
+echo "8) test the access_token as Bearer header for write"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test-write/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+subject=$(echo "$response" | jq '.subject' | sed -e 's/^"//' -e 's/"$//')
+echo "subject=$subject"
+
+if [ "$subject" != "test" ]; then
+  echo "subject not correct"
+  exit 1
+fi
+
+echo ""
+echo "9) test grant_type=client_credentials to get access_token with no existing scope"
+echo ""
+cmd="curl -is -X POST -u '$client_id:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials&scope=unknown'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "400" ]; then
+    echo "response code should be 400"
+    exit 1
+fi
+
+echo ""
+echo "10) test grant_type=client_credentials to get access_token with delete scope"
+echo ""
+cmd="curl -sS -X POST -u '$client_id:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials&scope=delete'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+echo ""
+echo "11) test the access_token as Bearer header for admin role"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test-admin/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "403" ]; then
+    echo "response code should be 403"
+    exit 1
+fi
+
+echo ""
+echo "12) test grant_type=password to get access_token"
+echo ""
+cmd="curl -sS -X POST -u '$client_id:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username&password=$password&scope=read'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+echo ""
+echo "13) test the access_token as Bearer header for admin role"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test-admin/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+subject=$(echo "$response" | jq '.subject' | sed -e 's/^"//' -e 's/"$//')
+echo "subject=$subject"
+
+if [ "$subject" != "test" ]; then
+  echo "subject not correct"
+  exit 1
+fi
+
+echo ""
+echo "14) test the access_token as Bearer header for admin delete"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test-admin-delete/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "403" ]; then
+    echo "response code should be 403"
+    exit 1
+fi
+
+echo ""
+echo "15) test grant_type=password to get access_token for admin delete"
+echo ""
+cmd="curl -sS -X POST -u '$client_id:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username&password=$password&scope=delete'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+echo ""
+echo "16) test the access_token as Bearer header for admin delete"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test-admin-delete/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+subject=$(echo "$response" | jq '.subject' | sed -e 's/^"//' -e 's/"$//')
+echo "subject=$subject"
+
+if [ "$subject" != "test" ]; then
+  echo "subject not correct"
+  exit 1
+fi
+
+echo ""
+echo "17) test the access_token as Bearer header for me"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+name=$(echo "$response" | jq '.name' | sed -e 's/^"//' -e 's/"$//')
+echo "name=$name"
+
+if [ "$name" != "$username" ]; then
+  echo "name not correct"
+  exit 1
+fi
+
+echo ""
+echo "18) test grant_type=client_credentials to get access_token with read scope"
+echo ""
+cmd="curl -sS -X POST -u '$root_client:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials&scope=read'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+echo ""
+echo "19) test the access_token as Bearer header for me"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+name=$(echo "$response" | jq '.name' | sed -e 's/^"//' -e 's/"$//')
+echo "name=$name"
+
+if [ "$name" != "$root_client" ]; then
+  echo "name not correct"
+  exit 1
+fi
+
+echo ""
+echo "------------------------------------------------------------------------------------------"
+echo "verify scopes and roles successful"

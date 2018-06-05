@@ -1,0 +1,1173 @@
+#!/bin/bash
+
+# prepare variables
+#
+client_id1=dcdfbbdfd6b54b7a93236a0ca70041a5
+client_name1=client
+client_secret=secret
+
+client_id2=ccf681950c2f4ce8b12fc37fd35481a6
+client_name2=trusted_client
+
+client_id3=fff007a807304b9a8d983f5eaa095c98
+client_name3=admin_client
+
+username1=user@example.com
+password=123
+
+username2=admin@example.com
+
+username3=super@example.com
+
+authserver_url=http://localhost:8282
+
+echo "******************************************************************************************"
+echo "test revocations"
+
+echo ""
+echo "--------------------------------"
+echo "1) verify end points are protected"
+echo ""
+
+cmd="curl -is -X GET '$authserver_url/api/v1/test/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -X GET '$authserver_url/oauth/v1/check_token?token=token_12345678910'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -X GET '$authserver_url/oauth/v1/token'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -u '$client_id:$client_secret' -X GET '$authserver_url/oauth/v1/check_token?token=token_not_existed'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "2) use grant_type=password to get access_tokens & refresh_tokens from authserver for username1, username2 and username3"
+echo ""
+cmd="curl -sS -X POST -u '$client_id2:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username1&password=$password'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token1=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token1" == "null" ]; then
+    echo "access_token1 is null"
+    exit 1
+fi
+
+echo "access_token1=$access_token1"
+
+refresh_token1=$(echo "$response" | jq '.refresh_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$refresh_token1" == "null" ]; then
+    echo "refresh_token1 is null"
+    exit 1
+fi
+
+echo "refresh_token1=$refresh_token1"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id2:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username2&password=$password'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token2=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token2" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token2=$access_token2"
+
+refresh_token2=$(echo "$response" | jq '.refresh_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$refresh_token2" == "null" ]; then
+    echo "refresh_token is null"
+    exit 1
+fi
+
+echo "refresh_token2=$refresh_token2"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id2:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=refresh_token&refresh_token=$refresh_token2'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token2=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token2" == "null" ]; then
+    echo "access_token2 is null"
+    exit 1
+fi
+
+echo "access_token2=$access_token2"
+
+refresh_token2=$(echo "$response" | jq '.refresh_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$refresh_token2" == "null" ]; then
+    echo "refresh_token is null"
+    exit 1
+fi
+
+echo "refresh_token2=$refresh_token2"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id2:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username3&password=$password'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token3=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token3" == "null" ]; then
+    echo "access_token3 is null"
+    exit 1
+fi
+
+echo "access_token3=$access_token3"
+
+refresh_token3=$(echo "$response" | jq '.refresh_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$refresh_token3" == "null" ]; then
+    echo "refresh_token3 is null"
+    exit 1
+fi
+
+echo "refresh_token3=$refresh_token3"
+
+echo ""
+echo "--------------------------------"
+echo "3) test the access_tokens as Bearer header for me"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token1' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+name=$(echo "$response" | jq '.name' | sed -e 's/^"//' -e 's/"$//')
+echo "name=$name"
+
+if [ "$name" != "$username1" ]; then
+  echo "name not correct"
+  exit 1
+fi
+
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token2' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+name=$(echo "$response" | jq '.name' | sed -e 's/^"//' -e 's/"$//')
+echo "name=$name"
+
+if [ "$name" != "$username2" ]; then
+  echo "name not correct"
+  exit 1
+fi
+
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token3' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+name=$(echo "$response" | jq '.name' | sed -e 's/^"//' -e 's/"$//')
+echo "name=$name"
+
+if [ "$name" != "$username3" ]; then
+  echo "name not correct"
+  exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "4) revoke the access_token2 use access_token1"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token1' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$access_token2&type=access_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "403" ]; then
+    echo "response code should be 403"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "5) revoke the access_token2 by self"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token2' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$access_token2&type=access_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token2' -X GET '$authserver_url/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "6) revoke the refresh_token2"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token3' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$refresh_token2&type=refresh_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=refresh_token&refresh_token=$refresh_token2'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "7) revoke the refresh_token1"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token1' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$refresh_token&type=refresh_token1'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -X POST -u '$client_id:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=refresh_token&scope=read&refresh_token=$refresh_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "8) revoke the access_token3 by access_token1"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token1' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$access_token3&type=access_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+# ROLE_USER has no authorization to revoke ROLE_ADMIN token
+#
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token3' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "9) test grant_type=client_credentials to get access_tokens for client_id1, client_id2 and client_id3"
+echo ""
+cmd="curl -sS -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token1=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token1" == "null" ]; then
+    echo "access_token1 is null"
+    exit 1
+fi
+
+echo "access_token1=$access_token1"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id2:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token2=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token2" == "null" ]; then
+    echo "access_token2 is null"
+    exit 1
+fi
+
+echo "access_token2=$access_token2"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id3:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token3=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token3" == "null" ]; then
+    echo "access_token3 is null"
+    exit 1
+fi
+
+echo "access_token3=$access_token3"
+
+echo ""
+echo "--------------------------------"
+echo "10) revoke the access_token2 use another client access_token1"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token1' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$access_token2&type=access_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token2' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+echo "revoke access_token2 use another client access_token3, client_only"
+cmd="curl -is -H 'Authorization: Bearer $access_token3' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$access_token2&type=access_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token2' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "11) revoke the access_token use the same client access_token"
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token2' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$access_token2&type=access_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token2' -X GET '$authserver_url/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "12) test revoke by client_id created by grant_type=client_credentials"
+echo ""
+cmd="curl -sS -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials&scope=read'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token1=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token1" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token1=$access_token1"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials&scope=write'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token2=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token2" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token2=$access_token2"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=client_credentials'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token3=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token3" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token3=$access_token3"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id3:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username2&password=$password&scope=read'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$client_id1&type=client_id'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token1' -X GET '$authserver_url/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token2' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token3' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "--------------------------------"
+echo "13) test revoke by username and same client"
+echo ""
+cmd="curl -sS -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username2&password=$password'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$username1&type=username'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username1&password=$password'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token1=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token1" == "null" ]; then
+    echo "access_token1 is null"
+    exit 1
+fi
+
+echo "access_token1=$access_token1"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username1&password=$password&scope=read'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token2=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token2" == "null" ]; then
+    echo "access_token2 is null"
+    exit 1
+fi
+
+echo "access_token2=$access_token2"
+
+echo ""
+cmd="curl -sS -X POST -u '$client_id1:$client_secret' '$authserver_url/oauth/v1/token' -d 'grant_type=password&username=$username1&password=$password&scope=write'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token3=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token3" == "null" ]; then
+    echo "access_token3 is null"
+    exit 1
+fi
+
+echo "access_token3=$access_token3"
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token' -X POST '$authserver_url/oauth/v1/revoke' -d 'value=$username1&type=username'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "200" ]; then
+    echo "response code should be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token1' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token2' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -H 'Authorization: Bearer $access_token3' -X GET '$authserver_url/v1/me'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "------------------------------------------------------------------------------------------"
+echo "test revocations successful"
+

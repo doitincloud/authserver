@@ -1,0 +1,236 @@
+#!/bin/bash
+
+# prepare variables
+#
+client_id=ccf681950c2f4ce8b12fc37fd35481a6
+client_secret=secret
+client_name=trusted_client
+scope="read%20write%20delete"
+redirect_uri=http://localhost:8080/login/oauth2
+
+username=admin@example.com
+password=123
+
+authserver_url=http://localhost:8282
+
+echo "******************************************************************************************"
+echo "test implicit flow"
+
+echo ""
+echo "1) verify end points are protected"
+echo ""
+
+cmd="curl -is -X GET '$authserver_url/api/v1/test/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -X GET '$authserver_url/oauth/v1/check_token?token=token_12345678910'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -X GET '$authserver_url/oauth/v1/token'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "response code should be 401"
+    exit 1
+fi
+
+echo ""
+cmd="curl -is -u '$client_id:$client_secret' -X GET '$authserver_url/oauth/v1/check_token?token=token_not_existed'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+    echo "response code should not be 200"
+    exit 1
+fi
+
+echo ""
+echo "2) test response_type=token without username and password"
+echo ""
+cmd="curl -is -X GET '$authserver_url/oauth/v1/authorize?response_type=token&client_id=$client_id&scope=$scope&redirect_uri=$redirect_uri'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "401" ]; then
+    echo "not http unauthorize"
+    exit 1
+fi
+
+echo ""
+echo "3) test response_type=token to get token info"
+echo ""
+cmd="curl -is -X GET -u '$username:$password' '$authserver_url/oauth/v1/authorize?response_type=token&client_id=$client_id&scope=$scope&redirect_uri=$redirect_uri'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" != "302" ]; then
+    echo "not http redirection"
+    exit 1
+fi
+
+token_info=$(echo "$response" | grep 'Location: ' | tr -d '\r' | awk -F# '{print $2}')
+
+if [ -z "$token_info" ]; then
+    echo "failed to get token info"
+    exit 1
+fi
+
+saveIFS=$IFS
+IFS='=&'
+parm=($token_info)
+IFS=$saveIFS
+
+for ((i=0; i<${#parm[@]}; i+=2)); do
+    declare ${parm[i]}=${parm[i+1]}
+done
+
+echo "access_token=$access_token"
+
+if [ ! -z "$refresh_token" ]; then
+  echo "refresh_token should be empty"
+  exit 1
+fi
+
+echo ""
+echo "4) check the access_token"
+echo ""
+cmd="curl -sS -u '$client_id:$client_secret' -X GET '$authserver_url/oauth/v1/check_token?token=$access_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+if [[ $response = *\"error\"* ]]; then
+  echo "check token failed"
+  exit 1
+else
+  echo "check token OK"
+fi  
+
+echo ""
+echo "5) test the access_token as Bearer header"
+echo ""
+cmd="curl -sS -H 'Authorization: Bearer $access_token' -X GET '$authserver_url/api/v1/test/test'"
+echo "$cmd"
+response=$(eval "$cmd")
+
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+subject=$(echo "$response" | jq '.subject' | sed -e 's/^"//' -e 's/"$//')
+echo "subject=$subject"
+
+if [ "$subject" != "test" ]; then
+  echo "subject not correct"
+  exit 1
+fi
+
+echo "------------------------------------------------------------------------------------------"
+echo "test implicit flow successful"

@@ -1,0 +1,44 @@
+#!/bin/bash
+
+echo ""
+./client_credentials_flow
+
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+echo ""
+./password_flow
+
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+echo ""
+./authorization_code_flow
+
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+echo ""
+./implicit_flow
+
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+echo ""
+./scopes_roles
+
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+echo ""
+./revocations
+
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
