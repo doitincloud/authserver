@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS rdbcache_client_test (
 CREATE TABLE IF NOT EXISTS rdbcache_stopwatch (
   id bigint not null auto_increment,
   monitor_id bigint not null,
-  type varchar(16) not null,
+  type varchar(64) not null,
   action varchar(255),
   thread_id int,
   duration bigint,

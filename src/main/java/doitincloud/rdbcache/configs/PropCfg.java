@@ -13,35 +13,35 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 @Configuration
 public class PropCfg {
 
-    private static String activeProfile;
+    private static String activeProfile = "prod";
 
-    private static String hdataPrefix;
+    private static String hdataPrefix = "hdata";
 
-    private static String hkeyPrefix;
+    private static String hkeyPrefix = "hkey";
 
-    private static String eventPrefix;
+    private static String eventPrefix = "event";
 
-    private static String queueName;
+    private static String queueName = "queue";
 
-    private static String defaultExpire;
+    private static String defaultExpire = "180";
 
-    private static String defaultAttr;
+    private static String defaultAttr = "async";
     
-    private static Boolean enableMonitor;
+    private static Boolean enableMonitor = false;
 
-    private static Long eventLockTimeout;
+    private static Long eventLockTimeout = 60L;
 
-    private static Long keyMinCacheTTL;
+    private static Long keyMinCacheTTL = 180L;
 
-    private static Long tableInfoCacheTTL;
+    private static Long tableInfoCacheTTL = 3600L;
 
-    private static Long maxCacheSize;
+    private static Long maxCacheSize = 1024L;
 
-    private static Long cacheRecycleSecs;
+    private static Long cacheRecycleSecs = 300L;  // 5 minutes
 
-    private static Boolean enableDbFallback;
+    private static Boolean enableDbFallback = false;
 
-    private static Long dataMaxCacheTLL;
+    private static Long dataMaxCacheTLL = 60L;
 
     private static String datasourceUrl;
 
@@ -50,7 +50,7 @@ public class PropCfg {
         return new PropertySourcesPlaceholderConfigurer();
     }
 
-    @Value("${spring.profiles.active:prod}")
+    @Value("${spring.profiles.active}")
     public void setActiveProfile(String name) {
         if (name != null && name.length() > 0) {
             activeProfile = name;
@@ -61,7 +61,7 @@ public class PropCfg {
         return activeProfile;
     }
 
-    @Value("${rdbcache.hdata_prefix:hdata}")
+    @Value("${rdbcache.hdata_prefix}")
     public void setHdataPrefix(String prefix) {
         if (prefix != null && prefix.length() > 0) {
             hdataPrefix = prefix.replace("::", "");
@@ -72,7 +72,7 @@ public class PropCfg {
         return hdataPrefix;
     }
 
-    @Value("${rdbcache.hkeys_prefix:hkey}")
+    @Value("${rdbcache.hkeys_prefix}")
     public void setHkeyPrefix(String prefix) {
         if (prefix != null && prefix.length() > 0) {
             hkeyPrefix = prefix.replace("::", "");
@@ -83,7 +83,7 @@ public class PropCfg {
         return hkeyPrefix;
     }
 
-    @Value("${rdbcache.event_prefix:event}")
+    @Value("${rdbcache.event_prefix}")
     public void setEventPrefix(String prefix) {
         if (prefix != null && prefix.length() > 0) {
             eventPrefix = prefix.replace("::", "");
@@ -94,7 +94,7 @@ public class PropCfg {
         return eventPrefix;
     }
 
-    @Value("${rdbcache.queue_name:queue}")
+    @Value("${rdbcache.queue_name}")
     public void setQueueName(String name) {
         if (name != null && name.length() > 0) {
             queueName = name.replace("::", "");
@@ -105,7 +105,7 @@ public class PropCfg {
         return queueName;
     }
 
-    @Value("${rdbcache.default_expire:180}")
+    @Value("${rdbcache.default_expire}")
     public void setDefaultExpire(String expire) {
         defaultExpire = expire;
     }
@@ -114,7 +114,7 @@ public class PropCfg {
         return defaultExpire;
     }
 
-    @Value("${rdbcache.default_attr:async}")
+    @Value("${rdbcache.default_attr}")
     public void setDefaultAttr(String attr) {
         defaultAttr = attr;
     }
@@ -123,7 +123,7 @@ public class PropCfg {
         return defaultAttr;
     }
 
-    @Value("${rdbcache.enable_monitor:false}")
+    @Value("${rdbcache.enable_monitor}")
     public void setEnableMonitor(Boolean enable) {
         enableMonitor = enable;
     }
@@ -132,12 +132,12 @@ public class PropCfg {
         return enableMonitor;
     }
 
-    @Value("${rdbcache.event_lock_timeout:60}")
+    @Value("${rdbcache.event_lock_timeout}")
     public void setEventLockTimeout(Long timeout) { eventLockTimeout = timeout; }
 
     public static Long getEventLockTimeout() { return eventLockTimeout; }
 
-    @Value("${rdbcache.key_min_cache_ttl:180}")
+    @Value("${rdbcache.key_min_cache_ttl}")
     public void setKeyInfoCacheTTL(Long ttl) {
         keyMinCacheTTL = ttl;
         if (keyMinCacheTTL < 60l) {
@@ -149,7 +149,7 @@ public class PropCfg {
         return keyMinCacheTTL;
     }
 
-    @Value("${rdbcache.table_info_cache_ttl:3600}")
+    @Value("${rdbcache.table_info_cache_ttl}")
     public void setTableInfoCacheTTL(Long ttl) {
         tableInfoCacheTTL = ttl;
     }
@@ -158,7 +158,7 @@ public class PropCfg {
         return tableInfoCacheTTL;
     }
 
-    @Value("${rdbcache.local_cache_max_size:1024}")
+    @Value("${rdbcache.local_cache_max_size}")
     public void setMaxCacheSize(Long maxSize) {
         maxCacheSize = maxSize;
     }
@@ -167,7 +167,7 @@ public class PropCfg {
         return maxCacheSize;
     }
 
-    @Value("${rdbcache.cache_recycle_secs:900}")
+    @Value("${rdbcache.cache_recycle_secs}")
     public void setCacheRecycleSecs(Long secs) {
         cacheRecycleSecs = secs;
     }
@@ -176,7 +176,7 @@ public class PropCfg {
         return cacheRecycleSecs;
     }
 
-    @Value("${rdbcache.enable_db_fallback:false}")
+    @Value("${rdbcache.enable_db_fallback}")
     public void setEnableDbFallback(Boolean enable) {
         enableDbFallback = enable;
     }
@@ -185,7 +185,7 @@ public class PropCfg {
         return enableDbFallback;
     }
 
-    @Value("${rdbcache.data_max_cache_ttl:600}")
+    @Value("${rdbcache.data_max_cache_ttl}")
     public void setDataMaxCacheTLL(Long tll) {
         dataMaxCacheTLL = tll;
     }
@@ -220,7 +220,7 @@ public class PropCfg {
           "\"cacheRecycleSecs\": \"" + cacheRecycleSecs.toString() + "\", " +
           "\"enableDbFallback\": \"" + enableDbFallback.toString() + "\", " +
           "\"dataMaxCacheTLL\": \"" + dataMaxCacheTLL.toString() + "\", "+
-          "\"datasourceUrl\": \"" + datasourceUrl + "\""+
+          "\"datasourceUrl\": \"" + datasourceUrl + "\"" +
            "}";
     }
 }

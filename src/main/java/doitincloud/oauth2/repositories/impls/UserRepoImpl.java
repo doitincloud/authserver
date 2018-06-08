@@ -43,7 +43,6 @@ public class UserRepoImpl implements UserRepo {
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKey, username);
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("findByUsername");
 
@@ -74,12 +73,10 @@ public class UserRepoImpl implements UserRepo {
         KvIdType idType = new KvIdType(username, table);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKey, username);
+        keyInfo.setQueryKey("NOOPS");
 
         Context context = getContext("delete");
 
         AppCtx.getRedisRepo().delete(context, pair, keyInfo);
-        AppCtx.getKeyInfoRepo().delete(context, pair);
-
-        AppCtx.getAsyncOps().deleteKvPairKeyInfo(context, pair, keyInfo);
     }
 }

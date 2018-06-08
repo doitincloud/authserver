@@ -1,0 +1,130 @@
+#!/bin/bash
+
+# prepare variables
+#
+client_client=dcdfbbdfd6b54b7a93236a0ca70041a5
+client_id=ccf681950c2f4ce8b12fc37fd35481a6
+client_secret=secret
+client_name=trusted_client
+scope="read%20write%20delete"
+redirect_uri=http://localhost:8080/login/oauth2
+
+username=admin@example.com
+password=123
+
+authserver_url=http://localhost:8282
+
+echo "******************************************************************************************"
+echo ""
+echo "1) test response_type=code to get code"
+echo ""
+cmd="curl -is -X GET -u '$username:$password' '$authserver_url/oauth/v1/authorize?response_type=code&client_id=$client_client&scope=read%20write&redirect_uri=$redirect_uri'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+
+if [ "$response_code" == "200" ]; then
+
+  session_id=$(echo "$response" | grep 'Set-Cookie: ' | awk -F '[=|;]' '{print $2}')
+
+  if [ -z "$session_id" ]; then
+    echo "failed to get session_id"
+    exit 1
+  fi
+
+  echo "session_id=$session_id"
+
+  echo ""
+  echo "2) submit form to get code"
+  echo ""
+  cmd="curl -is --cookie 'JSESSIONID=$session_id' -X POST -u '$username:$password' '$authserver_url/v1/oauth/authorize' -d 'user_oauth_approval=true&scope.read=true&scope.write=true&authorize=Authorize'"
+  echo "$cmd"
+  response=$(eval "$cmd")
+  RESULT=$?
+
+  echo "$response"
+
+  response_code=$(echo "$response" | head -n 1 | awk '{ print $2 }')
+fi
+
+if [ "$response_code" != "302" ]; then
+    echo "response code should be 302"
+  exit 1
+fi
+
+code=$(echo "$response" | grep 'Location: ' | tr -d '\r'| awk -F 'code=' '{print $2}')
+
+if [ -z "$code" ]; then
+    echo "failed to get code"
+    exit 1
+fi
+
+echo "code=$code"
+
+echo ""
+echo "2) test the code"
+echo ""
+cmd="curl -sS -X POST -u '$client_client:$client_secret' '$authserver_url/oauth/v1/token?grant_type=authorization_code' -d 'scope=read%20write&code=$code&redirect_uri=$redirect_uri'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+access_token=$(echo "$response" | jq '.access_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$access_token" == "null" ]; then
+    echo "access_token is null"
+    exit 1
+fi
+
+echo "access_token=$access_token"
+
+refresh_token=$(echo "$response" | jq '.refresh_token' | sed -e 's/^"//' -e 's/"$//')
+if [ "$refresh_token" == "null" ]; then
+    echo "refresh_token is null"
+    exit 1
+fi
+
+echo "refresh_token=$refresh_token"
+
+echo ""
+echo "3) check the access_token"
+echo ""
+cmd="curl -sS -u '$client_client:$client_secret' -X GET '$authserver_url/oauth/v1/check_token?token=$access_token'"
+echo "$cmd"
+response=$(eval "$cmd")
+RESULT=$?
+
+echo "$response"
+
+if [ $RESULT -eq 0 ]; then
+  echo "success"
+else
+  echo "failed to run $cmd"
+  exit 1
+fi
+
+if [[ $response = *\"error\"* ]]; then
+  echo "check token failed"
+  exit 1
+else
+  echo "check token OK"
+fi

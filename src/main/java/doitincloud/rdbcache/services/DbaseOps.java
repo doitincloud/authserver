@@ -140,7 +140,6 @@ public class DbaseOps {
         return dbMap;
     }
 
-
     synchronized public void logTraceMessage(String traceId, String message, StackTraceElement[] trace) {
 
         Map<String, Object> log = new LinkedHashMap<String, Object>();
@@ -307,6 +306,23 @@ public class DbaseOps {
         }
 
         return (Map<String, Object>) columns.get(table);
+    }
+
+    public List<String> getPrimaryIndexes(Context context, String table) {
+        Map<String, Object> map = getTableIndexes(context, table);
+        if (map == null || map.size() == 0) {
+            return null;
+        }
+        List<String> primaryIndexes = new ArrayList<>();
+        if (map.containsKey("PRIMARY")) {
+            primaryIndexes = (List<String>) map.get("PRIMARY");
+        } else {
+            for (Map.Entry<String, Object> entry: map.entrySet()) {
+                primaryIndexes = (List<String>) entry.getValue();
+                break;
+            }
+        }
+        return primaryIndexes;
     }
 
     public String getTableAutoIncColumn(Context context, String table) {

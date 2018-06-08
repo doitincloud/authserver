@@ -84,6 +84,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("find " + pair.printKey() + " " + keyInfo.toString());
         }
+        if (keyInfo.isNoOps()) {
+            LOGGER.warn("NOOPS should not call find " + pair.printKey() + " " + keyInfo.toString());
+            return false;
+        }
 
         String key = pair.getId();
         String type = pair.getType();
@@ -147,6 +151,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("find " + pairs.printKey() + "anyKey(" + anyKey.size() + ")");
+        }
+        if (anyKey.isNoOps()) {
+            LOGGER.warn("NOOPS should not call save " + pairs.printKey() + "anyKey(" + anyKey.size() + ")");
+            return false;
         }
 
         List<String> keys = new ArrayList<>();
@@ -324,6 +332,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("save " + pair.printKey() + " " + keyInfo.toString());
         }
+        if (keyInfo.isNoOps()) {
+            LOGGER.warn("NOOPS should not call save " + pair.printKey() + " " + keyInfo.toString());
+            return false;
+        }
 
         String key = pair.getId();
 
@@ -371,6 +383,10 @@ public class KeyInfoRepoImpl implements KeyInfoRepo {
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("save " + pairs.printKey() + anyKey.print());
+        }
+        if (anyKey.isNoOps()) {
+            LOGGER.warn("NOOPS should not call save " + pairs.printKey() + anyKey.print());
+            return false;
         }
 
         String type = pairs.get(0).getType();

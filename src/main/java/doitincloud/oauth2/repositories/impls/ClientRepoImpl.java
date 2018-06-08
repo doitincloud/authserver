@@ -46,11 +46,9 @@ public class ClientRepoImpl implements ClientRepo {
 
         LOGGER.trace("call findByClientId: " + clientId);
 
-        KvIdType idType = new KvIdType(clientId, table);
-        KvPair pair = new KvPair(idType);
+        KvPair pair = new KvPair(new KvIdType(clientId, table));
         KeyInfo keyInfo = new KeyInfo(table, indexKey, clientId);
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("findByClientId");
 
@@ -77,18 +75,12 @@ public class ClientRepoImpl implements ClientRepo {
 
         LOGGER.trace("call delete: " + clientId);
 
-        KvIdType idType = new KvIdType(clientId, table);
-
-        AppCtx.getCacheOps().removeData(idType);
-
-        KvPair pair = new KvPair(idType);
+        KvPair pair = new KvPair(new KvIdType(clientId, table));
         KeyInfo keyInfo = new KeyInfo(table, indexKey, clientId);
+        keyInfo.setQueryKey("NOOPS");
 
         Context context = getContext("delete");
 
         AppCtx.getRedisRepo().delete(context, pair, keyInfo);
-        AppCtx.getKeyInfoRepo().delete(context, pair);
-
-        AppCtx.getAsyncOps().deleteKvPairKeyInfo(context, pair, keyInfo);
     }
 }

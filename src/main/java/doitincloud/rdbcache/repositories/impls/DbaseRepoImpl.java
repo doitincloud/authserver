@@ -110,7 +110,7 @@ public class DbaseRepoImpl implements DbaseRepo {
             } else {
                 LOGGER.debug("find - kvFind Ok: " + pairs.printKey());
             }
-            AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
+            if (!anyKey.isNoOps()) AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
             return true;
 
         } else {
@@ -139,7 +139,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                     }
                 } else {
                     LOGGER.debug("find - found Ok: from " + table + " " + pairs.printKey());
-                    AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
+                    if (!anyKey.isNoOps()) AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
                 }
 
             } else {
@@ -177,7 +177,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                         }
                     } else {
                         LOGGER.debug("find - found Ok: from " + table + " " + pairs.printKey());
-                        AppCtx.getKeyInfoRepo().save(context, newPairs, newAnyKey);
+                        if (!newAnyKey.isNoOps()) AppCtx.getKeyInfoRepo().save(context, newPairs, newAnyKey);
                     }
                 }
             }
@@ -190,7 +190,7 @@ public class DbaseRepoImpl implements DbaseRepo {
     public boolean save(final Context context, final KvPair pair, final KeyInfo keyInfo) {
         if (saveOne(context, pair, keyInfo)) {
             LOGGER.debug("save - saveOne Ok: " + pair.printKey());
-            AppCtx.getKeyInfoRepo().save(context, pair, keyInfo);
+            if (!keyInfo.isNoOps()) AppCtx.getKeyInfoRepo().save(context, pair, keyInfo);
             return true;
         } else {
             LOGGER.debug("save - saveOne failed: " + pair.printKey());
@@ -209,7 +209,7 @@ public class DbaseRepoImpl implements DbaseRepo {
 
             if (saveOne(context, pairs.getPair(), anyKey.getKeyInfo())) {
                 LOGGER.debug("save - saveOne Ok: " + pairs.getPair().printKey());
-                AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
+                if (!anyKey.isNoOps()) AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
                 return true;
             } else {
                 LOGGER.debug("save - saveOne failed: " + pairs.getPair().printKey());
@@ -228,7 +228,9 @@ public class DbaseRepoImpl implements DbaseRepo {
                     LOGGER.debug("save - saveOne failed: " + pair.getId());
                     result = false;
                 } else {
-                    AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
+                    if (!keyInfo.isNoOps()) {
+                        AppCtx.getKeyInfoRepo().save(context, new KvPairs(pair), new AnyKey(keyInfo));
+                    }
                     LOGGER.debug("save - saveOne Ok: " + pair.getId());
                 }
             }
@@ -257,7 +259,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                 LOGGER.debug("insert kvSave failed: " + pairs.printKey());
                 return false;
             } else {
-                AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
+                if (!anyKey.isNoOps()) AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
                 LOGGER.debug("inserted kvSave Ok: " + pairs.printKey());
             }
         } else {
@@ -283,7 +285,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                     return false;
                 }
             } else {
-                AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
+                if (!anyKey.isNoOps()) AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
                 LOGGER.debug("insert Ok: " + pairs.getPair().getId() + pairs.printKey() + " for " + table);
             }
         }
@@ -335,7 +337,7 @@ public class DbaseRepoImpl implements DbaseRepo {
                     return false;
                 }
             } else {
-                AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
+                if (!anyKey.isNoOps()) AppCtx.getKeyInfoRepo().save(context, pairs, anyKey);
                 LOGGER.debug("updated Ok: " + anyKey.size() + " record(s) from " + table);
             }
         }

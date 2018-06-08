@@ -49,11 +49,10 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call get " + key + " " + type);
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("get");
 
@@ -72,9 +71,9 @@ public class LinkRepoImpl implements LinkRepo {
         }
         Map<String, Object> map = Utils.convertListToMap(list);
         pair.setData(map);
-        AppCtx.getRedisRepo().save(context, pair, keyInfo);
 
         Utils.getExcutorService().submit(() -> {
+            AppCtx.getRedisRepo().save(context, pair, keyInfo);
             AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
         });
 
@@ -86,11 +85,10 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call matchKey " + key + " " + type);
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("matchKey");
 
@@ -109,9 +107,9 @@ public class LinkRepoImpl implements LinkRepo {
         }
         Map<String, Object> map = Utils.convertListToMap(list);
         pair.setData(map);
-        AppCtx.getRedisRepo().save(context, pair, keyInfo);
 
         Utils.getExcutorService().submit(() -> {
+            AppCtx.getRedisRepo().save(context, pair, keyInfo);
             AppCtx.getExpireOps().setExpireKey(context, pair, keyInfo);
         });
 
@@ -123,11 +121,10 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call put " + key + " " + type + " " + token);
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key,  table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("put");
 
@@ -168,11 +165,10 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call put " + key + " " + type + " " + tokenKeySet.toString());
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("put");
 
@@ -207,8 +203,6 @@ public class LinkRepoImpl implements LinkRepo {
         pair.setData(map);
         AppCtx.getRedisRepo().save(context, pair, keyInfo);
 
-        AppCtx.getRedisRepo().save(context, pair, keyInfo);
-
         Utils.getExcutorService().submit(() -> {
 
             String sql1 = "delete from " + table + " where token_key = ? AND link_type = ?";
@@ -231,11 +225,10 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call add " + key + " " + type + " " + token);
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("add");
 
@@ -274,11 +267,10 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call remove " + key + " " + type + " " + token);
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("remove");
 
@@ -295,8 +287,6 @@ public class LinkRepoImpl implements LinkRepo {
             if (list.size() == 0) {
                 pair.clearData();
                 AppCtx.getRedisRepo().delete(context, pair, keyInfo);
-                AppCtx.getKeyInfoRepo().delete(context, pair);
-                AppCtx.getAsyncOps().deleteKvPairKeyInfo(context, pair, keyInfo);
             } else {
                 map = Utils.convertListToMap(list);
                 pair.setData(map);
@@ -339,11 +329,10 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call add " + key + " " + type + " " + tokenKeySet.toString());
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
         keyInfo.setQueryKey("NOOPS");
-        keyInfo.setIsNew(true);
 
         Context context = getContext("add2");
 
@@ -407,7 +396,7 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call remove " + key + " " + type);
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
         keyInfo.setQueryKey("NOOPS");
@@ -419,9 +408,6 @@ public class LinkRepoImpl implements LinkRepo {
         String sql = "delete from " + table + " where token_key = ? AND link_type = ?";
         String[] params = new String[]{key, type};
         jdbcTemplate.update(sql, params);
-
-        AppCtx.getKeyInfoRepo().delete(context, pair);
-        AppCtx.getAsyncOps().deleteKvPairKeyInfo(context, pair, keyInfo);
     }
 
     @Override
@@ -429,7 +415,7 @@ public class LinkRepoImpl implements LinkRepo {
 
         LOGGER.trace("call hashLink " + key + " " + type);
 
-        KvIdType idType = new KvIdType(key, "TokenLink/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         if (AppCtx.getCacheOps().containsData(idType)) {
             return true;
         }

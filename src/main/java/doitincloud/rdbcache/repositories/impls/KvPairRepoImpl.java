@@ -67,6 +67,31 @@ public class KvPairRepoImpl implements KvPairRepo {
             e.printStackTrace();
             return false;
         }
+        /*
+        KvPair dbPair = findById(pair.getIdType());
+        if (dbPair == null) {
+            try {
+                String sql = "insert into " + table + " (id, type, value) values (?, ?, ?)";
+                Object[] params = new Object[]{pair.getId(), pair.getType(), pair.getValue()};
+                int result = jdbcTemplate.update(sql, params);
+                return result == 1;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        } else if (!DbUtils.isMapEquals(pair.getData(), dbPair.getData())) {
+            try {
+                String sql = "update " + table + " set value = ? where id = ? AND type = ?";
+                Object[] params = new Object[]{pair.getValue(), pair.getId(), pair.getType()};
+                int result = jdbcTemplate.update(sql, params);
+                return result == 1;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return true;
+        */
     }
 
     @Override

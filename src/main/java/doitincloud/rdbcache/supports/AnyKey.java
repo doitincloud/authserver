@@ -67,6 +67,13 @@ public class AnyKey extends ArrayList<KeyInfo> {
         return s;
     }
 
+    public boolean isNoOps() {
+        if (size() == 0) {
+            return false;
+        }
+        return getAny(0).isNoOps();
+    }
+
     public String print() {
         if (size() == 0) {
             return null;

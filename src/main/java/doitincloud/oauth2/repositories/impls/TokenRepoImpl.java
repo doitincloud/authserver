@@ -42,9 +42,10 @@ public class TokenRepoImpl implements TokenRepo {
 
         LOGGER.trace("call get " + key + " " + type);
 
-        KvIdType idType = new KvIdType(key, "TokenStore/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
+        keyInfo.setQueryKey("NOOPS");
 
         Context context = getContext("get");
 
@@ -73,12 +74,13 @@ public class TokenRepoImpl implements TokenRepo {
 
         LOGGER.trace("call put " + key + " " + type);
 
-        KvIdType idType = new KvIdType(key, "TokenStore/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         Map<String, Object> map = Utils.toMap(token);
         pair.setData(map);
+
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
-        keyInfo.setIsNew(true);
+        keyInfo.setQueryKey("NOOPS");
 
         Context context = getContext("put");
 
@@ -95,9 +97,10 @@ public class TokenRepoImpl implements TokenRepo {
 
         LOGGER.trace("call remove " + key + " " + type);
 
-        KvIdType idType = new KvIdType(key, "TokenStore/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
+        keyInfo.setQueryKey("NOOPS");
 
         Context context = getContext("remove");
 
@@ -116,9 +119,6 @@ public class TokenRepoImpl implements TokenRepo {
 
         AppCtx.getRedisRepo().delete(context, pair, keyInfo);
         AppCtx.getDbaseRepo().delete(context, pair, keyInfo);
-        AppCtx.getKeyInfoRepo().delete(context, pair);
-
-        AppCtx.getAsyncOps().deleteKvPairKeyInfo(context, pair, keyInfo);
 
         return token;
     }
@@ -128,9 +128,10 @@ public class TokenRepoImpl implements TokenRepo {
 
         LOGGER.trace("call hasToken " + key + " " + type);
 
-        KvIdType idType = new KvIdType(key, "TokenStore/" + type);
+        KvIdType idType = new KvIdType(key, table + "/" + type);
         KvPair pair = new KvPair(idType);
         KeyInfo keyInfo = new KeyInfo(table, indexKeys, new String[]{key, type});
+        keyInfo.setQueryKey("NOOPS");
 
         Context context = getContext("hasToken");
 

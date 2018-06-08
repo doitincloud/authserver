@@ -651,7 +651,7 @@ public class RedisRepoImpl implements RedisRepo {
     public void delete(final Context context, final KvPair pair, final KeyInfo keyInfo) {
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("findAndSave: " + pair.printKey() + " " + keyInfo.toString());
+            LOGGER.trace("delete: " + pair.printKey() + " " + keyInfo.toString());
         }
 
         if (enableDataCache) {
@@ -689,7 +689,7 @@ public class RedisRepoImpl implements RedisRepo {
     public void delete(final Context context, final KvPairs pairs, final AnyKey anyKey) {
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("findAndSave pairs(" + pairs.size() + "): " + pairs.printKey() +
+            LOGGER.trace("delete pairs(" + pairs.size() + "): " + pairs.printKey() +
                     "anyKey(" + anyKey.size() + "): " + anyKey.printTable());
         }
 

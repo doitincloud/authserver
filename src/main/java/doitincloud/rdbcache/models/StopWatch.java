@@ -7,6 +7,7 @@
 package doitincloud.rdbcache.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -16,22 +17,22 @@ public class StopWatch {
 
     private Long id;
 
-    @Column(name="monitor_id")
+    @JsonProperty("monitor_id")
     private Long monitorId;
 
     private String type = "";
 
     private String action;
 
-    @Column(name="thread_id")
+    @JsonProperty("thread_id")
     private Long threadId;
 
     private Long duration;
 
-    @Column(name="started_at")
+    @JsonProperty("started_at")
     private Long startedAt;
 
-    @Column(name="ended_at")
+    @JsonProperty("ended_at")
     private Long endedAt;
 
     public StopWatch(String type, String action) {

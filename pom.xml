@@ -36,7 +36,7 @@
     <commons-lang.version>3.7</commons-lang.version>
     <guava.version>r05</guava.version>
     <usertype.core.version>6.0.1.GA</usertype.core.version>
-    <spring-security-oauth2.version>2.2.0.RELEASE</spring-security-oauth2.version>
+    <spring-security-oauth2.version>2.3.3.RELEASE</spring-security-oauth2.version>
 
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <maven-jar-plugin.version>2.1</maven-jar-plugin.version>

@@ -29,6 +29,7 @@ insert into oauth2_term (type, name, map_value) values ('grant_type', 'implicit'
 insert into oauth2_term (type, name, map_value) values ('resource_id', 'oauth2-resource', '{"visible":["ALL"]}');
 insert into oauth2_term (type, name, map_value) values ('resource_id', 'oauth2-admin-api', '{"visible":["ROLE_ADMIN", "ROLE_SUPER", "ROLE_ROOT"]}');
 insert into oauth2_term (type, name, map_value) values ('resource_id', 'rdbcache', '{"visible":["ROLE_USER", "ROLE_ADMIN", "ROLE_SUPER", "ROLE_ROOT"]}');
+insert into oauth2_term (type, name, map_value) values ('resource_id', 'digits-trie', '{"visible":["ROLE_USER", "ROLE_ADMIN", "ROLE_SUPER", "ROLE_ROOT"]}');
 
 insert into security_user_details (
     user_id,
@@ -119,7 +120,7 @@ insert into oauth2_client_details (
     'admin_client',
     '$2a$10$EX91cBtPWVR31fVGWCUhmu4AQdKENlAdKZtzSsacurwZYZmn0BzNO',
     'admin_client@example',
-    '{"resource_ids":["oauth2-resource","oauth2-admin-api","rdbcache"],"scope":["read","write","delete"],"authorized_grant_types":["client_credentials","password"],"auto_approve_scopes":["read","write","delete"],"authorities":["ROLE_INTERNAL"]}'
+    '{"resource_ids":["oauth2-resource","oauth2-admin-api","rdbcache","digits-trie"],"scope":["read","write","delete"],"authorized_grant_types":["client_credentials","password"],"auto_approve_scopes":["read","write","delete"],"authorities":["ROLE_INTERNAL"]}'
 );
 
 insert into oauth2_client_details (
@@ -133,7 +134,7 @@ insert into oauth2_client_details (
     'trusted_client',
     '$2a$10$EX91cBtPWVR31fVGWCUhmu4AQdKENlAdKZtzSsacurwZYZmn0BzNO',
     'trusted_client@example.com',
-'{"resource_ids":["oauth2-resource"],"registered_redirect_uri":["http://localhost:8080/login/oauth2"],"scope":["read","write","delete"],"authorized_grant_types":["refresh_token","implicit","client_credentials","password","authorization_code"],"auto_approve_scopes":["read","write","delete"],"authorities":["ROLE_TRUSTED"]}'
+'{"resource_ids":["oauth2-resource","rdbcache","digits-trie"],"registered_redirect_uri":["http://localhost:8080/login/oauth2"],"scope":["read","write","delete"],"authorized_grant_types":["refresh_token","implicit","client_credentials","password","authorization_code"],"auto_approve_scopes":["read","write","delete"],"authorities":["ROLE_TRUSTED"]}'
 );
 
 insert into oauth2_client_details (
@@ -147,5 +148,5 @@ insert into oauth2_client_details (
     'client',
     '$2a$10$EX91cBtPWVR31fVGWCUhmu4AQdKENlAdKZtzSsacurwZYZmn0BzNO',
     'client@example.com',
-'{"resource_ids":["oauth2-resource"],"registered_redirect_uri":["http://localhost:8080/login/oauth2"],"scope":["read","write"],"authorized_grant_types":["refresh_token","implicit","client_credentials","password","authorization_code"],"auto_approve_scopes":["read"],"authorities":["ROLE_CLIENT"]}'
+'{"resource_ids":["oauth2-resource","digits-trie"],"registered_redirect_uri":["http://localhost:8080/login/oauth2"],"scope":["read","write"],"authorized_grant_types":["refresh_token","implicit","client_credentials","password","authorization_code"],"auto_approve_scopes":["read"],"authorities":["ROLE_CLIENT"]}'
 );

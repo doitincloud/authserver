@@ -85,6 +85,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
                 .pathMapping("/oauth/token_key", "/oauth/v1/token_key")
                 .pathMapping("/oauth/confirm_access", "/oauth/v1/confirm_access")
                 .pathMapping("/oauth/error", "/oauth/v1/error")
+                //
                 .authenticationManager(authenticationManager)
                 .tokenServices(tokenServices())
                 .authorizationCodeServices(authorizationCodeServices())

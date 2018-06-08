@@ -127,6 +127,14 @@ public class KeyInfo implements Cloneable {
         this.queryKey = queryKey;
     }
 
+    @JsonIgnore
+    public boolean isNoOps() {
+        if (queryKey != null && queryKey.startsWith("NOOPS")) {
+            return true;
+        }
+        return false;
+    }
+
     public Boolean getIsNew() {
         if (isNew == null) {
             isNew = false;
@@ -191,18 +199,9 @@ public class KeyInfo implements Cloneable {
         if (table == null || queryKey == null) {
             return null;
         }
-        Map<String, Object> map = AppCtx.getDbaseOps().getTableIndexes(null, table);
-        if (map == null || map.size() == 0) {
+        primaryIndexes = AppCtx.getDbaseOps().getPrimaryIndexes(null, table);
+        if (primaryIndexes == null) {
             queryKey = null;
-            return null;
-        }
-        if (map.containsKey("PRIMARY")) {
-            primaryIndexes = (List<String>) map.get("PRIMARY");
-        } else {
-            for (Map.Entry<String, Object> entry: map.entrySet()) {
-                primaryIndexes = (List<String>) entry.getValue();
-                break;
-            }
         }
         return primaryIndexes;
     }

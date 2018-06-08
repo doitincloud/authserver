@@ -6,7 +6,9 @@
 
 package doitincloud.rdbcache.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -20,24 +22,24 @@ public class Monitor {
 
     private String name = "";
 
-    @Column(name="thread_id")
+    @JsonProperty("thread_id")
     private Long threadId;
 
     private Long duration;
 
-    @Column(name="main_duration")
+    @JsonProperty("main_duration")
     private Long mainDuration;
 
-    @Column(name="started_at")
+    @JsonProperty("started_at")
     private Long startedAt;
 
-    @Column(name="ended_at")
+    @JsonProperty("ended_at")
     private Long endedAt;
 
-    @Column(name="trace_id")
+    @JsonProperty("trace_id")
     private String traceId;
 
-    @Column(name="built_info")
+    @JsonProperty("built_info")
     private String builtInfo;
 
     public Monitor(String name, String type, String action) {
@@ -188,9 +190,10 @@ public class Monitor {
         mainDuration = watch.stopNow();
     }
 
-    @Transient
+    @JsonIgnore
     private List<StopWatch> watches;
 
+    @JsonIgnore
     public List<StopWatch> getStopWatches() {
         return watches;
     }

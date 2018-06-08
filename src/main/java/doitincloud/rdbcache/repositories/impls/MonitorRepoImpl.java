@@ -109,7 +109,7 @@ public class MonitorRepoImpl implements MonitorRepo {
                 fields += key;
                 values += "?";
             }
-            final String sql2 = "insert into " + monitorTable + "(" + fields + ") values (" + values + ")";
+            final String sql2 = "insert into " + stopWatchTable + "(" + fields + ") values (" + values + ")";
 
             List<Object[]> paramsList = new ArrayList<Object[]>();
 

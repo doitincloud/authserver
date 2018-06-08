@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class ExpireOps {
@@ -134,6 +136,7 @@ public class ExpireOps {
     public void setExpireKey(Context context, KvPair pair, KeyInfo keyInfo) {
 
         try {
+
             String key = pair.getId();
             String type = pair.getType();
 
@@ -141,6 +144,11 @@ public class ExpireOps {
 
             String expire = keyInfo.getExpire();
             String expKey = eventPrefix + "::" + type + ":" + key;
+
+            boolean noOps = keyInfo.isNoOps();
+            if (noOps) {
+                expKey += "::" + keyInfo.getQueryKey() + "/" + expire;
+            }
 
             StopWatch stopWatch = context.startStopWatch("redis", "scriptExecutor.execute");
             Long result = scriptExecutor.execute(set_expire_key_script,
@@ -150,7 +158,7 @@ public class ExpireOps {
             if (result != 1) {
                 keyInfo.restoreExpire();
             }
-            if (keyInfo.getIsNew()) {
+            if (!noOps && keyInfo.getIsNew()) {
                 AppCtx.getKeyInfoRepo().save(context, pair, keyInfo);
             }
         } catch (Exception e) {
@@ -197,9 +205,20 @@ public class ExpireOps {
         }
         String type = hashKey.substring(0, index);
         String key = hashKey.substring(index+1);
+        String traceId = parts[parts.length-1];
 
-        String traceId = parts[2];
-
+        String expireString = null;
+        String queryKey = null;
+        boolean noOps = false;
+        if (parts.length > 3) {
+            String ops = parts[2];
+            if (ops.startsWith("NOOPS")) { // NOOPS/300 or NOOPS=beanName/300
+                noOps = true;
+                String[] subParts = ops.split("/");
+                queryKey = subParts[0];
+                if (subParts.length > 1) expireString = subParts[1];
+            }
+        }
         Context context = new Context(traceId);
         KvPair pair = new KvPair(key, type);
 
@@ -224,16 +243,68 @@ public class ExpireOps {
 
             KvPairs pairs = new KvPairs(pair);
             AnyKey anyKey = new AnyKey();
+            KeyInfo keyInfo = null;
 
-            if (!AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
+            if (noOps) {
 
-                String msg = "keyInfo not found";
-                LOGGER.error(msg);
-                context.logTraceMessage(msg);
-                return;
+                String table = type;
+                String[] keyValues = new String[]{key};
+                if (hashKey.indexOf("/") > 0) {
+                    String[] tps = hashKey.split("/");
+                    table = tps[0];
+                    keyValues = tps[tps.length-1].split(":");
+                }
+
+                List<String> primaryIndexes = AppCtx.getDbaseOps().getPrimaryIndexes(context, table);
+                if (primaryIndexes == null) {
+
+                    String msg = "best effort mode - primary index is null for NOOPS: " + table;
+                    LOGGER.trace(msg);
+                    context.logTraceMessage(msg);
+                    keyInfo = new KeyInfo();
+
+                } else if (primaryIndexes.size() == 1) {
+
+                    String indexKey = primaryIndexes.get(0);
+                    keyInfo = new KeyInfo(table, indexKey, keyValues[0]);
+
+                } else {
+
+                    String[] indexKeys = new String[primaryIndexes.size()];
+                    for (int i = 0; i < primaryIndexes.size(); i++) {
+                        indexKeys[i] = primaryIndexes.get(i);
+                    }
+                    if (indexKeys.length <= keyValues.length) {
+
+                        keyInfo = new KeyInfo(table, indexKeys, keyValues);
+
+                    } else {
+
+                        String msg = "best effort mode - values size not correct for NOOPS: " + table;
+                        LOGGER.warn(msg);
+                        context.logTraceMessage(msg);
+                        keyInfo = new KeyInfo();
+                    }
+                }
+
+                if (expireString != null) {
+                    keyInfo.setExpire(expireString);
+                }
+                anyKey.add(keyInfo);
+
+            } else if (AppCtx.getKeyInfoRepo().find(context, pairs, anyKey)) {
+
+                keyInfo = anyKey.getKeyInfo();
+                queryKey = keyInfo.getQueryKey();
+
             }
 
-            KeyInfo keyInfo = anyKey.getKeyInfo();
+            if (keyInfo == null) {
+                String msg = "failed to get key info";
+                LOGGER.trace(msg);
+                context.closeMonitor();
+                return;
+            }
 
             LOGGER.trace(keyInfo.toString());
 
@@ -242,11 +313,18 @@ public class ExpireOps {
             if (expire > 0) {
                 if (AppCtx.getRedisRepo().find(context, pairs, anyKey)) {
 
-                    String qkey = keyInfo.getQueryKey();
-                    if (qkey == null || !qkey.equals("NOOPS")) {
+                    String beanName = null;
+                    String[] ps = queryKey.split("=");
+                    if (ps.length > 1 && ps[1].length() > 0) {
+                        beanName = ps[1];
+                    }
+
+                    if (!noOps && beanName == null) {
+
                         AppCtx.getDbaseRepo().save(context, pairs, anyKey);
-                    } else if (qkey != null && qkey.startsWith("ExpireDbOps::")) {
-                        String beanName = qkey.substring(13);
+
+                    } else if (beanName != null) {
+
                         ApplicationContext ctx = AppCtx.getApplicationContext();
                         if (ctx != null) {
                             try {
@@ -260,11 +338,13 @@ public class ExpireOps {
                                 e.printStackTrace();
                             }
                         }
-                    } else {
-                        LOGGER.trace("queryKey = " + keyInfo.getQueryKey());
                     }
+
                     AppCtx.getRedisRepo().delete(context, pairs, anyKey);
-                    AppCtx.getKeyInfoRepo().delete(context, pairs);
+
+                    if (!noOps) {
+                        AppCtx.getKeyInfoRepo().delete(context, pairs);
+                    }
 
                 } else {
                     String msg = "failed to find key from redis for " + key;
