@@ -36,7 +36,7 @@ mvn clean spring-boot:run
     
     ./tests
     
-    #OR you can run individual tests as following
+    #OR you can run individual test as following:
     
     ./authorization_code_flow
     ./client_credentials_flow
