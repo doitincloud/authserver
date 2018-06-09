@@ -1,5 +1,5 @@
-About authservr
----------------
+About authserver
+----------------
 
 authserver is a deep dive into spring boot security and oauth2. It uses the rdbcache code to provide three layers (memory, redis and mysql) of cache and persistency. Token revocation services have been added to support reset or change of user password and client secret.
 
