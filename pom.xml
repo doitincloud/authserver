@@ -3,7 +3,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>doitincloud</groupId>
+  <groupId>com.doitincloud</groupId>
   <artifactId>authserver</artifactId>
   <version>1.0.1</version>
   <name>authserver</name>
@@ -20,7 +20,6 @@
   <properties>
 
     <java.version>1.8</java.version>
-    <boot.version>${parent.version}</boot.version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -29,16 +28,16 @@
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
     <authors>Sam Wen</authors>
 
-    <hikaricp.version>3.1.0</hikaricp.version>
-    <mysql-connector.verion>8.0.11</mysql-connector.verion>
+    <hikaricp.version>2.7.4</hikaricp.version>
     <jedis.client.version>2.9.0</jedis.client.version>
-    <httpclient.version>4.5.5</httpclient.version>
-    <commons-lang.version>3.7</commons-lang.version>
+    <httpclient.version>4.4.1</httpclient.version>
+    <commons-lang3.version>3.7</commons-lang3.version>
     <guava.version>r05</guava.version>
     <usertype.core.version>6.0.1.GA</usertype.core.version>
+
+    <mysql-connector.verion>8.0.11</mysql-connector.verion>
     <spring-security-oauth2.version>2.3.3.RELEASE</spring-security-oauth2.version>
 
-    <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <maven-jar-plugin.version>2.1</maven-jar-plugin.version>
 
   </properties>
@@ -57,11 +56,6 @@
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-redis</artifactId>
     </dependency>
 
@@ -76,22 +70,42 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <!-- exclude tomcat-jdbc, Spring Boot will use HikariCP automatically  -->
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
       <version>${hikaricp.version}</version>
     </dependency>
+
     <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>${mysql-connector.verion}</version>
+        <groupId>com.doitincloud.rdbcache</groupId>
+        <artifactId>rdbcache-core</artifactId>
+        <version>1.0.0.RELEASE</version>
     </dependency>
 
     <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
       <version>${jedis.client.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>${mysql-connector.verion}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.security.oauth</groupId>
+      <artifactId>spring-security-oauth2</artifactId>
+      <version>${spring-security-oauth2.version}</version>
     </dependency>
 
     <dependency>
@@ -103,7 +117,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>${commons-lang.version}</version>
+      <version>${commons-lang3.version}</version>
     </dependency>
 
     <dependency>
@@ -119,9 +133,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.springframework.security.oauth</groupId>
-      <artifactId>spring-security-oauth2</artifactId>
-      <version>${spring-security-oauth2.version}</version>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
     </dependency>
 
     <dependency>
@@ -136,6 +149,13 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -143,22 +163,20 @@
     <plugins>
 
       <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <version>${boot.version}</version>
-        <configuration>
-          <excludeDevtools>true</excludeDevtools>
-        </configuration>
-      </plugin>
-
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
           <compilerArgument>-parameters</compilerArgument>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludeDevtools>true</excludeDevtools>
         </configuration>
       </plugin>
 

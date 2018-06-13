@@ -169,7 +169,7 @@ if [ "$response_code" == "200" ]; then
   echo ""
   echo "4) submit form to get code"
   echo ""
-  cmd="curl -is --cookie 'JSESSIONID=$session_id' -X POST -u '$username:$password' '$authserver_url/v1/oauth/authorize' -d 'user_oauth_approval=true&scope.read=true&scope.write=true&scope.delete=true&authorize=Authorize'"
+  cmd="curl -is --cookie 'JSESSIONID=$session_id' -X POST -u '$username:$password' '$authserver_url/oauth/v1/authorize' -d 'user_oauth_approval=true&scope.read=true&scope.write=true&scope.delete=true&authorize=Authorize'"
   echo "$cmd"
   response=$(eval "$cmd")
   RESULT=$?
@@ -391,7 +391,7 @@ if [ "$response_code" == "200" ]; then
   echo ""
   echo "12) submit form to get code"
   echo ""
-  cmd="curl -is --cookie 'JSESSIONID=$session_id' -X POST -u '$username:$password' '$authserver_url/v1/oauth/authorize' -d 'user_oauth_approval=true&scope.read=true&scope.write=true&authorize=Authorize'"
+  cmd="curl -is --cookie 'JSESSIONID=$session_id' -X POST -u '$username:$password' '$authserver_url/oauth/v1/authorize' -d 'user_oauth_approval=true&scope.read=true&scope.write=true&authorize=Authorize'"
   echo "$cmd"
   response=$(eval "$cmd")
   RESULT=$?

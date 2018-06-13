@@ -1,5 +1,3 @@
-use doitincloud_db;
-
 delete from rdbcache_kv_pair;
 
 delete from security_user_details;
