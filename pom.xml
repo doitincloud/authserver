@@ -81,7 +81,7 @@
     <dependency>
         <groupId>com.doitincloud.rdbcache</groupId>
         <artifactId>rdbcache-core</artifactId>
-        <version>1.0.0.RELEASE</version>
+        <version>1.0.0-SNAPSHOT</version>
     </dependency>
 
     <dependency>
